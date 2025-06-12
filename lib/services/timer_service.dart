@@ -83,18 +83,19 @@ class TimerService {
   }
 
   void _handleTimerEnd() async {
-    await notificationService.notify();
-
     if (_state.isCountdown) {
+      await notificationService.notify();
       _timer?.cancel();
       _state = _state.copyWith(status: TimerStatus.finished);
       _emitState();
     } else if (_state.isInterval) {
+      // インターバルの各フェーズ終了時の通常通知
+      await notificationService.notify();
       _handleIntervalPhaseEnd();
     }
   }
 
-  void _handleIntervalPhaseEnd() {
+  void _handleIntervalPhaseEnd() async {
     if (_state.currentPhase == TimerPhase.work) {
       // ワークフェーズ終了、レストフェーズに移行
       _state = _state.copyWith(
@@ -105,20 +106,24 @@ class TimerService {
     } else {
       // レストフェーズ終了
       if (_state.totalCycles > 0 && _state.currentCycle >= _state.totalCycles) {
-        // 設定されたサイクル数完了
+        // 設定されたサイクル数完了（インターバル終了）
         _timer?.cancel();
         _state = _state.copyWith(status: TimerStatus.finished);
         _emitState();
+        // インターバル終了の特別な振動
+        await notificationService.notify(isIntervalEnd: true);
         return;
       }
       
-      // 次のサイクルのワークフェーズに移行
+      // 次のサイクルのワークフェーズに移行（各サイクル終了）
       _state = _state.copyWith(
         duration: _state.intervalWorkDuration,
         currentPhase: TimerPhase.work,
         currentCycle: _state.currentCycle + 1,
       );
       _emitState();
+      // 各サイクル終了時も特別な振動
+      await notificationService.notify(isIntervalEnd: true);
     }
   }
 

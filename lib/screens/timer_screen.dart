@@ -305,7 +305,9 @@ class _TimerScreenState extends State<TimerScreen> {
           builder: (context, snapshot) {
             final state = snapshot.data!;
             
-            return SingleChildScrollView(
+            return Stack(
+              children: [
+                SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(8.0, 4.0, 8.0, 4.0),
             child: Column(
               children: [
@@ -328,26 +330,6 @@ class _TimerScreenState extends State<TimerScreen> {
                           color: Colors.white,
                         ),
                       ),
-                      if (state.isInterval) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          state.currentPhase == TimerPhase.work ? 'トレーニング' : '休憩',
-                          style: const TextStyle(
-                            fontSize: 24,
-                            color: Colors.white,
-                          ),
-                        ),
-                        if (state.totalCycles > 0) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            '${state.currentCycle}/${state.totalCycles} サイクル',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              color: Colors.white70,
-                            ),
-                          ),
-                        ],
-                      ],
                     ],
                   ),
                 ),
@@ -481,6 +463,30 @@ class _TimerScreenState extends State<TimerScreen> {
                 ),
               ],
             ),
+          ),
+          // フローティングサイクル表示（左上固定）
+          if (state.isInterval && state.totalCycles > 0)
+            Positioned(
+              top: 16,
+              left: 16,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.black54,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.white30, width: 1),
+                ),
+                child: Text(
+                  '${state.currentCycle}/${state.totalCycles}',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+          ],
           );
         },
         ),
@@ -552,14 +558,32 @@ class _TimerScreenState extends State<TimerScreen> {
       return Colors.green;
     } else if (state.isRunning) {
       if (state.isInterval) {
-        return state.currentPhase == TimerPhase.work 
-            ? Colors.red 
-            : Colors.blue;
+        // インターバルタイマーの色分け
+        if (state.currentPhase == TimerPhase.rest) {
+          return Colors.green; // 休憩中は緑
+        } else {
+          // トレーニング中は残り時間で色変更
+          if (state.duration <= 5) {
+            return Colors.red; // 残り5秒以下は赤
+          } else if (state.duration <= 15) {
+            return Colors.yellow[700]!; // 残り15秒以下は黄色
+          } else {
+            return Colors.blue; // 通常は青
+          }
+        }
+      } else {
+        // カウントダウンタイマーの残り時間による色変更
+        if (state.duration <= 5) {
+          return Colors.red; // 残り5秒以下は赤
+        } else if (state.duration <= 15) {
+          return Colors.yellow[700]!; // 残り15秒以下は黄色
+        } else {
+          return Colors.blue; // 通常は青
+        }
       }
-      return Colors.blue;
     } else if (state.isPaused) {
       return Colors.orange;
     }
-    return Colors.grey;
+    return Colors.grey; // 停止中は灰色
   }
 }

@@ -5,8 +5,8 @@ import 'package:vibration/vibration.dart';
 class NotificationService {
   final AudioPlayer _audioPlayer = AudioPlayer();
 
-  Future<void> notify() async {
-    await Future.wait([_playSound(), _vibrate()]);
+  Future<void> notify({bool isIntervalEnd = false}) async {
+    await Future.wait([_playSound(), _vibrate(isIntervalEnd: isIntervalEnd)]);
   }
 
   Future<void> _playSound() async {
@@ -26,21 +26,30 @@ class NotificationService {
     }
   }
 
-  Future<void> _vibrate() async {
+  Future<void> _vibrate({bool isIntervalEnd = false}) async {
     try {
       if (!kIsWeb && await Vibration.hasVibrator() == true) {
-        await Vibration.vibrate(
-          pattern: [
-            0, 300, 100, 300, 100, 300, // 1回目：ブル、ブル、ブル
-            400, // 少し長めの休憩
-            300, 100, 300, 100, 300, // 2回目：ブル、ブル、ブル
-          ],
-          intensities: [
-            128, 255, 128, 255, 128, 255, // 1回目
-            0, // 休憩
-            255, 128, 255, 128, 255, // 2回目
-          ],
-        );
+        if (isIntervalEnd) {
+          // インターバル終了時：ブ〜〜ン（長い振動）
+          await Vibration.vibrate(
+            pattern: [0, 1000], // 1秒の長い振動
+            intensities: [255], // 最大強度
+          );
+        } else {
+          // 通常時：ブル、ブル、ブル×2回
+          await Vibration.vibrate(
+            pattern: [
+              0, 300, 100, 300, 100, 300, // 1回目：ブル、ブル、ブル
+              400, // 少し長めの休憩
+              300, 100, 300, 100, 300, // 2回目：ブル、ブル、ブル
+            ],
+            intensities: [
+              128, 255, 128, 255, 128, 255, // 1回目
+              0, // 休憩
+              255, 128, 255, 128, 255, // 2回目
+            ],
+          );
+        }
       }
     } catch (e) {
       debugPrint('振動エラー: $e');
