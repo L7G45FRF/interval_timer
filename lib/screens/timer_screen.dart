@@ -16,13 +16,13 @@ class _TimerScreenState extends State<TimerScreen> {
   late NotificationService _notificationService;
   
   // カウントダウン用
-  final _countdownMinutesController = TextEditingController(text: '5');
+  final _countdownMinutesController = TextEditingController(text: '0');
   final _countdownSecondsController = TextEditingController(text: '0');
   
   // インターバル用
-  final _workMinutesController = TextEditingController(text: '5');
+  final _workMinutesController = TextEditingController(text: '0');
   final _workSecondsController = TextEditingController(text: '0');
-  final _restMinutesController = TextEditingController(text: '1');
+  final _restMinutesController = TextEditingController(text: '0');
   final _restSecondsController = TextEditingController(text: '0');
   final _cyclesController = TextEditingController(text: '3');
   
@@ -51,21 +51,44 @@ class _TimerScreenState extends State<TimerScreen> {
 
   void _startTimer() {
     if (_selectedType == TimerType.countdown) {
-      final minutes = _parseTimeInput(_countdownMinutesController.text, 5);
+      final minutes = _parseTimeInput(_countdownMinutesController.text, 0);
       final seconds = _parseTimeInput(_countdownSecondsController.text, 0);
       final totalSeconds = minutes * 60 + seconds;
-      _timerService.startCountdownTimer(totalSeconds);
+      if (totalSeconds > 0) {
+        _timerService.startCountdownTimer(totalSeconds);
+      }
     } else {
-      final workMinutes = _parseTimeInput(_workMinutesController.text, 5);
+      final workMinutes = _parseTimeInput(_workMinutesController.text, 0);
       final workSeconds = _parseTimeInput(_workSecondsController.text, 0);
-      final restMinutes = _parseTimeInput(_restMinutesController.text, 1);
+      final restMinutes = _parseTimeInput(_restMinutesController.text, 0);
       final restSeconds = _parseTimeInput(_restSecondsController.text, 0);
       final cycles = _parseTimeInput(_cyclesController.text, 0);
-      _timerService.startIntervalTimer(
-        workSeconds: workMinutes * 60 + workSeconds,
-        restSeconds: restMinutes * 60 + restSeconds,
-        totalCycles: cycles,
-      );
+      final workTotalSeconds = workMinutes * 60 + workSeconds;
+      final restTotalSeconds = restMinutes * 60 + restSeconds;
+      if (workTotalSeconds > 0 && restTotalSeconds > 0 && cycles > 0) {
+        _timerService.startIntervalTimer(
+          workSeconds: workTotalSeconds,
+          restSeconds: restTotalSeconds,
+          totalCycles: cycles,
+        );
+      }
+    }
+  }
+
+  bool _canStartTimer() {
+    if (_selectedType == TimerType.countdown) {
+      final minutes = _parseTimeInput(_countdownMinutesController.text, 0);
+      final seconds = _parseTimeInput(_countdownSecondsController.text, 0);
+      return (minutes * 60 + seconds) > 0;
+    } else {
+      final workMinutes = _parseTimeInput(_workMinutesController.text, 0);
+      final workSeconds = _parseTimeInput(_workSecondsController.text, 0);
+      final restMinutes = _parseTimeInput(_restMinutesController.text, 0);
+      final restSeconds = _parseTimeInput(_restSecondsController.text, 0);
+      final cycles = _parseTimeInput(_cyclesController.text, 0);
+      return (workMinutes * 60 + workSeconds) > 0 && 
+             (restMinutes * 60 + restSeconds) > 0 && 
+             cycles > 0;
     }
   }
 
@@ -82,6 +105,176 @@ class _TimerScreenState extends State<TimerScreen> {
     if (controller.text.trim().isEmpty) {
       controller.text = '0';
     }
+    FocusScope.of(context).unfocus(); // キーボードを閉じる
+    setState(() {}); // UI更新をトリガー
+  }
+
+
+  void _adjustTime(TextEditingController controller, int increment) {
+    final currentValue = _parseTimeInput(controller.text, 0);
+    final newValue = (currentValue + increment).clamp(0, 999);
+    controller.text = newValue.toString();
+    setState(() {});
+  }
+
+  void _clearTime(TextEditingController minutesController, TextEditingController secondsController) {
+    minutesController.text = '0';
+    secondsController.text = '0';
+    setState(() {});
+  }
+
+  Widget _buildTimeControls({
+    required TextEditingController minutesController,
+    required TextEditingController secondsController,
+    required bool enabled,
+    required String label,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            // 分の入力とコントロール
+            Expanded(
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      // 分 ダウンボタン
+                      SizedBox(
+                        width: 40,
+                        height: 40,
+                        child: IconButton(
+                          onPressed: enabled ? () => _adjustTime(minutesController, -5) : null,
+                          icon: const Icon(Icons.remove),
+                          style: IconButton.styleFrom(
+                            backgroundColor: Colors.grey[200],
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      // 分 入力フィールド
+                      Expanded(
+                        child: TextFormField(
+                          controller: minutesController,
+                          decoration: const InputDecoration(
+                            labelText: '分',
+                            border: OutlineInputBorder(),
+                          ),
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                          enabled: enabled,
+                          onChanged: (_) => setState(() {}),
+                          onEditingComplete: () => _handleFieldFocusLost(minutesController),
+                          onFieldSubmitted: (_) => _handleFieldFocusLost(minutesController),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      // 分 アップボタン
+                      SizedBox(
+                        width: 40,
+                        height: 40,
+                        child: IconButton(
+                          onPressed: enabled ? () => _adjustTime(minutesController, 5) : null,
+                          icon: const Icon(Icons.add),
+                          style: IconButton.styleFrom(
+                            backgroundColor: Colors.grey[200],
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 16),
+            // 秒の入力とコントロール
+            Expanded(
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      // 秒 ダウンボタン
+                      SizedBox(
+                        width: 40,
+                        height: 40,
+                        child: IconButton(
+                          onPressed: enabled ? () => _adjustTime(secondsController, -10) : null,
+                          icon: const Icon(Icons.remove),
+                          style: IconButton.styleFrom(
+                            backgroundColor: Colors.grey[200],
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      // 秒 入力フィールド
+                      Expanded(
+                        child: TextFormField(
+                          controller: secondsController,
+                          decoration: const InputDecoration(
+                            labelText: '秒',
+                            border: OutlineInputBorder(),
+                          ),
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                          enabled: enabled,
+                          onChanged: (_) => setState(() {}),
+                          onEditingComplete: () => _handleFieldFocusLost(secondsController),
+                          onFieldSubmitted: (_) => _handleFieldFocusLost(secondsController),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      // 秒 アップボタン
+                      SizedBox(
+                        width: 40,
+                        height: 40,
+                        child: IconButton(
+                          onPressed: enabled ? () => _adjustTime(secondsController, 10) : null,
+                          icon: const Icon(Icons.add),
+                          style: IconButton.styleFrom(
+                            backgroundColor: Colors.grey[200],
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        // クリアボタン
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: enabled ? () => _clearTime(minutesController, secondsController) : null,
+            icon: const Icon(Icons.clear, size: 16),
+            label: const Text('クリア'),
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   void _pauseTimer() {
@@ -104,79 +297,22 @@ class _TimerScreenState extends State<TimerScreen> {
         backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
       ),
-      body: StreamBuilder<TimerState>(
-        stream: _timerService.stateStream,
-        initialData: _timerService.currentState,
-        builder: (context, snapshot) {
-          final state = snapshot.data!;
-          
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(), // 画面タップでキーボードを閉じる
+        child: StreamBuilder<TimerState>(
+          stream: _timerService.stateStream,
+          initialData: _timerService.currentState,
+          builder: (context, snapshot) {
+            final state = snapshot.data!;
+            
+            return SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(8.0, 4.0, 8.0, 4.0),
             child: Column(
               children: [
-                // タイマー選択
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'タイマーの種類',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: RadioListTile<TimerType>(
-                                title: const Text('カウントダウン'),
-                                value: TimerType.countdown,
-                                groupValue: _selectedType,
-                                onChanged: state.isInitial ? (value) {
-                                  setState(() {
-                                    _selectedType = value!;
-                                  });
-                                } : null,
-                              ),
-                            ),
-                            Expanded(
-                              child: RadioListTile<TimerType>(
-                                title: const Text('インターバル'),
-                                value: TimerType.interval,
-                                groupValue: _selectedType,
-                                onChanged: state.isInitial ? (value) {
-                                  setState(() {
-                                    _selectedType = value!;
-                                  });
-                                } : null,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                
-                const SizedBox(height: 16),
-                
-                // 設定
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: _selectedType == TimerType.countdown 
-                        ? _buildCountdownSettings(state)
-                        : _buildIntervalSettings(state),
-                  ),
-                ),
-                
-                const SizedBox(height: 24),
-                
-                // タイマー表示
+                // タイマー表示（最上部に配置）
                 Container(
                   width: double.infinity,
-                  height: 200,
+                  height: 100,
                   decoration: BoxDecoration(
                     color: _getTimerColor(state),
                     borderRadius: BorderRadius.circular(16),
@@ -193,7 +329,7 @@ class _TimerScreenState extends State<TimerScreen> {
                         ),
                       ),
                       if (state.isInterval) ...[
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 4),
                         Text(
                           state.currentPhase == TimerPhase.work ? 'トレーニング' : '休憩',
                           style: const TextStyle(
@@ -216,7 +352,7 @@ class _TimerScreenState extends State<TimerScreen> {
                   ),
                 ),
                 
-                const SizedBox(height: 24),
+                const SizedBox(height: 4),
                 
                 // コントロールボタン
                 Column(
@@ -227,14 +363,14 @@ class _TimerScreenState extends State<TimerScreen> {
                         width: double.infinity,
                         height: 60,
                         child: ElevatedButton.icon(
-                          onPressed: _startTimer,
+                          onPressed: _canStartTimer() ? _startTimer : null,
                           icon: const Icon(Icons.play_arrow, size: 28),
                           label: const Text(
                             '開始',
                             style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                           ),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
+                            backgroundColor: _canStartTimer() ? Colors.green : Colors.grey,
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -280,10 +416,74 @@ class _TimerScreenState extends State<TimerScreen> {
                     ],
                   ],
                 ),
+                
+                const SizedBox(height: 4),
+                
+                // タイマー選択
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(12.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'タイマーの種類',
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: RadioListTile<TimerType>(
+                                title: const Text('カウントダウン', style: TextStyle(fontSize: 14)),
+                                value: TimerType.countdown,
+                                groupValue: _selectedType,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 4.0),
+                                dense: true,
+                                onChanged: state.isInitial ? (value) {
+                                  setState(() {
+                                    _selectedType = value!;
+                                  });
+                                } : null,
+                              ),
+                            ),
+                            Expanded(
+                              child: RadioListTile<TimerType>(
+                                title: const Text('インターバル', style: TextStyle(fontSize: 14)),
+                                value: TimerType.interval,
+                                groupValue: _selectedType,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 4.0),
+                                dense: true,
+                                onChanged: state.isInitial ? (value) {
+                                  setState(() {
+                                    _selectedType = value!;
+                                  });
+                                } : null,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                
+                const SizedBox(height: 4),
+                
+                // 設定
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: _selectedType == TimerType.countdown 
+                        ? _buildCountdownSettings(state)
+                        : _buildIntervalSettings(state),
+                  ),
+                ),
               ],
             ),
           );
         },
+        ),
       ),
     );
   }
@@ -297,38 +497,11 @@ class _TimerScreenState extends State<TimerScreen> {
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: TextFormField(
-                controller: _countdownMinutesController,
-                decoration: const InputDecoration(
-                  labelText: '分',
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                enabled: state.isInitial,
-                onEditingComplete: () => _handleFieldFocusLost(_countdownMinutesController),
-                onFieldSubmitted: (_) => _handleFieldFocusLost(_countdownMinutesController),
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: TextFormField(
-                controller: _countdownSecondsController,
-                decoration: const InputDecoration(
-                  labelText: '秒',
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                enabled: state.isInitial,
-                onEditingComplete: () => _handleFieldFocusLost(_countdownSecondsController),
-                onFieldSubmitted: (_) => _handleFieldFocusLost(_countdownSecondsController),
-              ),
-            ),
-          ],
+        _buildTimeControls(
+          minutesController: _countdownMinutesController,
+          secondsController: _countdownSecondsController,
+          enabled: state.isInitial,
+          label: '',
         ),
       ],
     );
@@ -343,84 +516,18 @@ class _TimerScreenState extends State<TimerScreen> {
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
-        // トレーニング時間
-        const Text(
-          'トレーニング時間',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: TextFormField(
-                controller: _workMinutesController,
-                decoration: const InputDecoration(
-                  labelText: '分',
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                enabled: state.isInitial,
-                onEditingComplete: () => _handleFieldFocusLost(_workMinutesController),
-                onFieldSubmitted: (_) => _handleFieldFocusLost(_workMinutesController),
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: TextFormField(
-                controller: _workSecondsController,
-                decoration: const InputDecoration(
-                  labelText: '秒',
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                enabled: state.isInitial,
-                onEditingComplete: () => _handleFieldFocusLost(_workSecondsController),
-                onFieldSubmitted: (_) => _handleFieldFocusLost(_workSecondsController),
-              ),
-            ),
-          ],
+        _buildTimeControls(
+          minutesController: _workMinutesController,
+          secondsController: _workSecondsController,
+          enabled: state.isInitial,
+          label: 'トレーニング時間',
         ),
         const SizedBox(height: 16),
-        // 休憩時間
-        const Text(
-          '休憩時間',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: TextFormField(
-                controller: _restMinutesController,
-                decoration: const InputDecoration(
-                  labelText: '分',
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                enabled: state.isInitial,
-                onEditingComplete: () => _handleFieldFocusLost(_restMinutesController),
-                onFieldSubmitted: (_) => _handleFieldFocusLost(_restMinutesController),
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: TextFormField(
-                controller: _restSecondsController,
-                decoration: const InputDecoration(
-                  labelText: '秒',
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                enabled: state.isInitial,
-                onEditingComplete: () => _handleFieldFocusLost(_restSecondsController),
-                onFieldSubmitted: (_) => _handleFieldFocusLost(_restSecondsController),
-              ),
-            ),
-          ],
+        _buildTimeControls(
+          minutesController: _restMinutesController,
+          secondsController: _restSecondsController,
+          enabled: state.isInitial,
+          label: '休憩時間',
         ),
         const SizedBox(height: 16),
         TextFormField(
@@ -432,6 +539,7 @@ class _TimerScreenState extends State<TimerScreen> {
           keyboardType: TextInputType.number,
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           enabled: state.isInitial,
+          onChanged: (_) => setState(() {}),
           onEditingComplete: () => _handleFieldFocusLost(_cyclesController),
           onFieldSubmitted: (_) => _handleFieldFocusLost(_cyclesController),
         ),
