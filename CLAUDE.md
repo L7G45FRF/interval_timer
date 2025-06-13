@@ -54,6 +54,7 @@ flutter build linux        # Linux
 
 - `flutter_ringtone_player: ^4.0.0+2` - クロスプラットフォームシステム音声再生
 - `vibration: ^2.0.0` - デバイス振動サポート
+- `flutter_launcher_icons: ^0.14.1` - アプリアイコン自動生成（dev依存関係）
 
 ### タイマー状態フロー
 
@@ -105,6 +106,14 @@ flutter build linux        # Linux
 
 ### プラットフォーム固有機能
 音声と振動の実装には、段階的劣化のためのプラットフォームチェック（`Vibration.hasVibrator()`）が含まれています。音声再生は`flutter_ringtone_player`により全プラットフォームで統一的に動作します。
+
+### アプリアイコン
+`flutter_launcher_icons`パッケージを使用してマルチプラットフォーム対応のアイコンを自動生成：
+- **Android**: アダプティブアイコン対応（丸形状での最適表示）
+- **iOS**: 各種サイズのアイコンを自動生成
+- **Web**: PWA対応アイコンとファビコン
+- **Linux**: 基本アイコンファイル配置
+- 元画像: `assets/icons/app_icon.png` から各プラットフォーム用にリサイズ
 
 ### テスト
 Widgetテストはアプリ初期化と基本UI要素を検証。タイマーロジックは`NotificationService`をモックすることでテスト可能。

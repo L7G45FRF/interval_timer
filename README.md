@@ -76,6 +76,20 @@ flutter build ios
 flutter build web
 ```
 
+### アプリアイコンの更新
+アプリアイコンを変更する場合：
+1. `assets/icons/app_icon.png` を新しいアイコン画像に置き換え
+2. アイコンを再生成：
+```bash
+dart run flutter_launcher_icons
+```
+
+**対応プラットフォーム:**
+- Android（アダプティブアイコン対応）
+- iOS（各種サイズ自動生成）
+- Web（PWA対応）
+- Linux
+
 ## プロジェクト構成
 
 ```
@@ -96,6 +110,7 @@ lib/
 - **状態管理**: Stream-based architecture
 - **音声再生**: flutter_ringtone_player package
 - **振動制御**: vibration package
+- **アイコン生成**: flutter_launcher_icons package
 - **対応プラットフォーム**: Android, iOS, Web, Windows, macOS, Linux
 
 ## 使用方法
