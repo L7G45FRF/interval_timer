@@ -44,14 +44,15 @@ flutter build linux        # Linux
 - タイマーは`Timer.periodic`を使用して1秒間隔で実行
 
 **通知システム**:
-- `NotificationService`が音声（ビープ音）と触覚フィードバック（振動）の両方を処理
-- Webプラットフォームは音声にbase64エンコードされたWAVデータを使用
+- `NotificationService`が音声（システム通知音）と触覚フィードバック（振動）の両方を処理
+- `flutter_ringtone_player`を使用してクロスプラットフォーム対応のシステム通知音を再生
+- 音声出力：イヤホン接続時はイヤホンから、非接続時は本体スピーカーから再生
 - モバイルプラットフォームは触覚フィードバックに`vibration`パッケージを使用
 - 振動パターンの差別化：通常時（ブル、ブル、ブル×2回）、サイクル/終了時（ブ〜〜ン1秒）
 
 ### 主要依存関係
 
-- `audioplayers: ^6.0.0` - クロスプラットフォーム音声再生
+- `flutter_ringtone_player: ^4.0.0+2` - クロスプラットフォームシステム音声再生
 - `vibration: ^2.0.0` - デバイス振動サポート
 
 ### タイマー状態フロー
@@ -103,7 +104,7 @@ flutter build linux        # Linux
 `TimerType`列挙型を拡張し、`TimerService._handleTimerEnd()`に対応するロジックを追加。
 
 ### プラットフォーム固有機能
-音声と振動の実装には、段階的劣化のためのプラットフォームチェック（`kIsWeb`、`Vibration.hasVibrator()`）が含まれています。
+音声と振動の実装には、段階的劣化のためのプラットフォームチェック（`Vibration.hasVibrator()`）が含まれています。音声再生は`flutter_ringtone_player`により全プラットフォームで統一的に動作します。
 
 ### テスト
 Widgetテストはアプリ初期化と基本UI要素を検証。タイマーロジックは`NotificationService`をモックすることでテスト可能。

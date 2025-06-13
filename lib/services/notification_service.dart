@@ -1,9 +1,9 @@
 import 'package:flutter/foundation.dart';
-import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter_ringtone_player/flutter_ringtone_player.dart';
 import 'package:vibration/vibration.dart';
 
 class NotificationService {
-  final AudioPlayer _audioPlayer = AudioPlayer();
+  final FlutterRingtonePlayer _ringtonePlayer = FlutterRingtonePlayer();
 
   Future<void> notify({bool isIntervalEnd = false}) async {
     await Future.wait([_playSound(), _vibrate(isIntervalEnd: isIntervalEnd)]);
@@ -11,16 +11,8 @@ class NotificationService {
 
   Future<void> _playSound() async {
     try {
-      // 簡単なビープ音を再生
-      if (kIsWeb) {
-        // Webの場合は短いビープ音データを使用
-        const beepData =
-            'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBjaK1fPTfSkDJXfH8N2QQAoUXrTp66hVFApGn+DyvmwhBjWG0vLKeCIHKn7N8+GGMQYWY7bp5KdUIgtBmuLtul4fBSuBzvLYizgYGGS57OihTgwKUqnl4q9BFAIEP2i99Ox9UQs=';
-        await _audioPlayer.play(UrlSource(beepData));
-      } else {
-        // モバイル・デスクトップの場合は、利用可能な音声ファイルがない場合は何もしない
-        debugPrint('音声ファイルがありません - 振動のみで通知します');
-      }
+      // flutter_ringtone_playerを使用してシステム音を再生
+      await _ringtonePlayer.playNotification();
     } catch (e) {
       debugPrint('音声再生エラー: $e');
     }
@@ -57,6 +49,6 @@ class NotificationService {
   }
 
   void dispose() {
-    _audioPlayer.dispose();
+    // flutter_ringtone_playerは自動でリソース管理されるため、特別な処理は不要
   }
 }

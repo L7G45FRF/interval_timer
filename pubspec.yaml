@@ -36,7 +36,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   
   # 音効果のためのパッケージ
-  audioplayers: ^6.0.0
+  flutter_ringtone_player: ^4.0.0+2
   
   # 振動のためのパッケージ
   vibration: ^2.0.0
