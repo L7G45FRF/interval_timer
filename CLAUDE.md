@@ -118,6 +118,24 @@ flutter build linux        # Linux
 ### テスト
 Widgetテストはアプリ初期化と基本UI要素を検証。タイマーロジックは`NotificationService`をモックすることでテスト可能。
 
+### CI/CD とリリース配布
+
+**GitHub Actions**:
+- `.github/workflows/android-release.yml`によるAndroid APK自動ビルド
+- mainブランチpush時：開発用ビルド（Actionsタブにアーティファクト保存）
+- タグpush時：リリース用ビルド（GitHub Releaseページに自動作成）
+
+**自動バージョン管理**:
+- タグなしpush：`pubspec.yaml`のバージョン使用
+- タグ付きpush：タグからバージョン自動抽出（例：`v2.1.3` → アプリ内バージョン`2.1.3`）
+- ビルド番号：GitHub Actions実行番号を自動使用
+
+**リリース配布**:
+- 野良APK形式での配布に最適化
+- タグ作成で自動リリース：`git tag v1.0.0 && git push origin v1.0.0`
+- APKファイル名：`interval-timer-v1.0.0.apk`（タグと完全同期）
+- インストール方法と注意事項を含む日本語リリースノート自動生成
+
 ### 言語設定
 このプロジェクトは日本語UIで構築されており、すべてのユーザー向けテキストは日本語で記述されています。新機能やUIコンポーネントを追加する際は日本語を使用してください。
 

@@ -1,0 +1,100 @@
+name: Android Release Build
+
+on:
+  push:
+    branches: [ main ]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'zulu'
+        java-version: '17'
+        
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.24.0'
+        channel: 'stable'
+        
+    - name: Install dependencies
+      run: flutter pub get
+      
+    - name: Run tests
+      run: flutter test
+      
+    - name: Run static analysis
+      run: flutter analyze
+      
+    - name: Extract version from tag
+      if: startsWith(github.ref, 'refs/tags/')
+      id: get_version
+      run: |
+        VERSION=${GITHUB_REF#refs/tags/v}
+        BUILD_NUMBER=${GITHUB_RUN_NUMBER}
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+        echo "Version: $VERSION, Build: $BUILD_NUMBER"
+    
+    - name: Build APK (with tag version)
+      if: startsWith(github.ref, 'refs/tags/')
+      run: flutter build apk --release --build-name=${{ steps.get_version.outputs.version }} --build-number=${{ steps.get_version.outputs.build_number }}
+      
+    - name: Build APK (default version)
+      if: "!startsWith(github.ref, 'refs/tags/')"
+      run: flutter build apk --release
+      
+    - name: Upload APK artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: android-apk
+        path: build/app/outputs/flutter-apk/app-release.apk
+        retention-days: 30
+        
+        
+    - name: Create GitHub Release
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: actions/create-release@v1
+      id: create_release
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref_name }}
+        release_name: Release ${{ github.ref_name }}
+        body: |
+          ## リリース内容
+          - Android APKファイルを生成（野良APK配布用）
+          
+          ## インストール方法
+          1. 下記のAPKファイルをダウンロード
+          2. Android端末で「設定」→「セキュリティ」→「提供元不明のアプリ」を許可
+          3. ダウンロードしたAPKファイルをタップしてインストール
+          
+          ## 注意事項
+          - Google Play外のアプリのため、セキュリティ警告が表示されます
+          - 自動更新されないため、新バージョンは手動でインストールしてください
+        draft: false
+        prerelease: false
+        
+    - name: Upload APK to Release
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: build/app/outputs/flutter-apk/app-release.apk
+        asset_name: interval-timer-${{ github.ref_name }}.apk
+        asset_content_type: application/vnd.android.package-archive
+        
