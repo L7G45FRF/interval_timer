@@ -76,6 +76,32 @@ flutter build ios
 flutter build web
 ```
 
+## リリースとダウンロード
+
+### APKダウンロード（野良アプリ配布）
+このアプリは野良APKとして配布されており、以下からダウンロードできます：
+
+**GitHub Releases**: [https://github.com/L7G45FRF/interval_timer/releases](https://github.com/L7G45FRF/interval_timer/releases)
+
+### インストール方法
+1. **APKファイルをダウンロード**: 最新リリースからAPKファイルを取得
+2. **セキュリティ設定を変更**: Android端末で「設定」→「セキュリティ」→「提供元不明のアプリ」を許可
+3. **APKをインストール**: ダウンロードしたAPKファイルをタップしてインストール
+
+### 注意事項
+- **セキュリティ警告**: Google Play外のアプリのため、インストール時に警告が表示されます
+- **自動更新なし**: 新バージョンは手動でダウンロード・インストールが必要です
+- **自己責任**: 野良APKのインストールは自己責任で行ってください
+
+### リリース管理
+**開発者向け**: 新しいリリースを作成するには：
+```bash
+# バージョンタグを作成してプッシュ
+git tag v1.0.0
+git push origin v1.0.0
+```
+これにより、GitHub Actionsが自動的にAPKをビルドし、Releaseページに公開します。
+
 ### アプリアイコンの更新
 アプリアイコンを変更する場合：
 1. `assets/icons/app_icon.png` を新しいアイコン画像に置き換え
