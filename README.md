@@ -74,24 +74,76 @@ flutter build ios
 
 # Web
 flutter build web
+
+# Windows
+flutter build windows
+
+# Linux
+flutter build linux
+
+# macOS
+flutter build macos
 ```
 
 ## リリースとダウンロード
 
-### APKダウンロード（野良アプリ配布）
-このアプリは野良APKとして配布されており、以下からダウンロードできます：
+このアプリは複数のプラットフォーム向けにビルドされたバイナリとして配布されています。
 
 **GitHub Releases**: [https://github.com/L7G45FRF/interval_timer/releases](https://github.com/L7G45FRF/interval_timer/releases)
 
-### インストール方法
-1. **APKファイルをダウンロード**: 最新リリースからAPKファイルを取得
+### Android版（野良APKダウンロード）
+
+#### インストール方法
+1. **APKファイルをダウンロード**: 最新リリースから`interval-timer-android-*.apk`を取得
 2. **セキュリティ設定を変更**: Android端末で「設定」→「セキュリティ」→「提供元不明のアプリ」を許可
 3. **APKをインストール**: ダウンロードしたAPKファイルをタップしてインストール
 
-### 注意事項
+#### 注意事項
 - **セキュリティ警告**: Google Play外のアプリのため、インストール時に警告が表示されます
 - **自動更新なし**: 新バージョンは手動でダウンロード・インストールが必要です
 - **自己責任**: 野良APKのインストールは自己責任で行ってください
+
+### Windows版
+
+#### インストール方法
+1. **ZIPファイルをダウンロード**: 最新リリースから`interval-timer-windows-*.zip`を取得
+2. **解凍**: 適当なフォルダに解凍
+3. **実行**: `interval_timer.exe`を起動
+
+#### システム要件
+- Windows 10以降（64ビット）
+
+#### 注意事項
+- 初回実行時にWindows Defenderの警告が表示される場合があります
+- 「詳細情報」→「実行」で起動できます
+
+### Linux版
+
+#### インストール方法
+1. **tar.gzファイルをダウンロード**: 最新リリースから`interval-timer-linux-*.tar.gz`を取得
+2. **解凍**:
+   ```bash
+   tar -xzf interval-timer-linux-*.tar.gz
+   ```
+3. **実行権限を付与**（必要に応じて）:
+   ```bash
+   chmod +x interval_timer
+   ```
+4. **実行**:
+   ```bash
+   ./interval_timer
+   ```
+
+#### システム要件
+- Ubuntu 20.04以降、またはそれに相当するLinuxディストリビューション（64ビット）
+- GTK 3.0以降
+
+#### 注意事項
+- ディストリビューションによっては追加の依存パッケージが必要な場合があります
+- 依存関係が不足している場合は、以下をインストールしてください：
+  ```bash
+  sudo apt-get install libgtk-3-0 libblkid1 liblzma5
+  ```
 
 ### リリース管理
 **開発者向け**: 新しいリリースを作成するには：
@@ -100,7 +152,7 @@ flutter build web
 git tag v1.0.0
 git push origin v1.0.0
 ```
-これにより、GitHub Actionsが自動的にAPKをビルドし、Releaseページに公開します。
+これにより、GitHub Actionsが自動的にAndroid、Windows、Linux向けのビルドを実行し、Releaseページに公開します。
 
 ### アプリアイコンの更新
 アプリアイコンを変更する場合：
