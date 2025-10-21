@@ -79,17 +79,17 @@ jobs:
           ## インストール方法
           1. 下記のZIPファイルをダウンロード
           2. 適当なフォルダに解凍
-          3. `interval_timer.exe` を実行
+          3. interval_timer.exe を実行
 
           ## システム要件
           - Windows 10以降（64ビット）
 
           ## 注意事項
           - 初回実行時にWindows Defenderの警告が表示される場合があります
-          - 「詳細情報」→「実行」で起動できます
+          - 詳細情報から実行で起動できます
         files: |
           interval-timer-windows-*.zip
         draft: false
         prerelease: false
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
