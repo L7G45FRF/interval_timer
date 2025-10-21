@@ -1,0 +1,113 @@
+name: Linux Release Build
+
+on:
+  push:
+    branches: [ main ]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Install Linux dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev
+
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.24.0'
+        channel: 'stable'
+
+    - name: Install dependencies
+      run: flutter pub get
+
+    - name: Run tests
+      run: flutter test
+
+    - name: Run static analysis
+      run: flutter analyze
+
+    - name: Extract version from tag
+      if: startsWith(github.ref, 'refs/tags/')
+      id: get_version
+      run: |
+        VERSION=${GITHUB_REF#refs/tags/v}
+        BUILD_NUMBER=${GITHUB_RUN_NUMBER}
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+        echo "Version: $VERSION, Build: $BUILD_NUMBER"
+
+    - name: Build Linux (with tag version)
+      if: startsWith(github.ref, 'refs/tags/')
+      run: flutter build linux --release --build-name=${{ steps.get_version.outputs.version }} --build-number=${{ steps.get_version.outputs.build_number }}
+
+    - name: Build Linux (default version)
+      if: "!startsWith(github.ref, 'refs/tags/')"
+      run: flutter build linux --release
+
+    - name: Create archive
+      run: |
+        VERSION="${{ startsWith(github.ref, 'refs/tags/') && steps.get_version.outputs.version || 'dev' }}"
+        cd build/linux/x64/release/bundle
+        tar -czf ../../../../../interval-timer-linux-$VERSION.tar.gz *
+
+    - name: Upload Linux artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: linux-release
+        path: interval-timer-linux-*.tar.gz
+        retention-days: 30
+
+    - name: Create GitHub Release
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: ${{ github.ref_name }}
+        name: Release ${{ github.ref_name }}
+        body: |
+          ## リリース内容
+          - Linux実行ファイル（64ビット版）
+
+          ## インストール方法
+          1. 下記のtar.gzファイルをダウンロード
+          2. 適当なフォルダに解凍：
+             ```bash
+             tar -xzf interval-timer-linux-*.tar.gz
+             ```
+          3. 実行権限を付与（必要に応じて）：
+             ```bash
+             chmod +x interval_timer
+             ```
+          4. 実行：
+             ```bash
+             ./interval_timer
+             ```
+
+          ## システム要件
+          - Ubuntu 20.04以降、またはそれに相当するLinuxディストリビューション（64ビット）
+          - GTK 3.0以降
+
+          ## 注意事項
+          - ディストリビューションによっては追加の依存パッケージが必要な場合があります
+          - 依存関係が不足している場合は、以下をインストールしてください：
+            ```bash
+            sudo apt-get install libgtk-3-0 libblkid1 liblzma5
+            ```
+        files: |
+          interval-timer-linux-*.tar.gz
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

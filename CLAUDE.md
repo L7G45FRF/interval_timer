@@ -122,6 +122,8 @@ Widgetテストはアプリ初期化と基本UI要素を検証。タイマーロ
 
 **GitHub Actions**:
 - `.github/workflows/android-release.yml`によるAndroid APK自動ビルド
+- `.github/workflows/windows-release.yml`によるWindows実行ファイル自動ビルド
+- `.github/workflows/linux-release.yml`によるLinux実行ファイル自動ビルド
 - mainブランチpush時：開発用ビルド（Actionsタブにアーティファクト保存）
 - タグpush時：リリース用ビルド（GitHub Releaseページに自動作成）
 
@@ -131,10 +133,11 @@ Widgetテストはアプリ初期化と基本UI要素を検証。タイマーロ
 - ビルド番号：GitHub Actions実行番号を自動使用
 
 **リリース配布**:
-- 野良APK形式での配布に最適化
+- **Android**: 野良APK形式での配布（`interval-timer-android-*.apk`）
+- **Windows**: ZIP形式での配布（`interval-timer-windows-*.zip`、64ビット版）
+- **Linux**: tar.gz形式での配布（`interval-timer-linux-*.tar.gz`、64ビット版）
 - タグ作成で自動リリース：`git tag v1.0.0 && git push origin v1.0.0`
-- APKファイル名：`interval-timer-v1.0.0.apk`（タグと完全同期）
-- インストール方法と注意事項を含む日本語リリースノート自動生成
+- 各プラットフォーム向けのインストール方法と注意事項を含む日本語リリースノート自動生成
 
 ### 言語設定
 このプロジェクトは日本語UIで構築されており、すべてのユーザー向けテキストは日本語で記述されています。新機能やUIコンポーネントを追加する際は日本語を使用してください。

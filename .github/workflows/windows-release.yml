@@ -1,0 +1,95 @@
+name: Windows Release Build
+
+on:
+  push:
+    branches: [ main ]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.24.0'
+        channel: 'stable'
+
+    - name: Install dependencies
+      run: flutter pub get
+
+    - name: Run tests
+      run: flutter test
+
+    - name: Run static analysis
+      run: flutter analyze
+
+    - name: Extract version from tag
+      if: startsWith(github.ref, 'refs/tags/')
+      id: get_version
+      shell: bash
+      run: |
+        VERSION=${GITHUB_REF#refs/tags/v}
+        BUILD_NUMBER=${GITHUB_RUN_NUMBER}
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+        echo "Version: $VERSION, Build: $BUILD_NUMBER"
+
+    - name: Build Windows (with tag version)
+      if: startsWith(github.ref, 'refs/tags/')
+      run: flutter build windows --release --build-name=${{ steps.get_version.outputs.version }} --build-number=${{ steps.get_version.outputs.build_number }}
+
+    - name: Build Windows (default version)
+      if: "!startsWith(github.ref, 'refs/tags/')"
+      run: flutter build windows --release
+
+    - name: Create archive
+      shell: pwsh
+      run: |
+        $version = if ("${{ github.ref }}" -like "refs/tags/*") { "${{ steps.get_version.outputs.version }}" } else { "dev" }
+        Compress-Archive -Path build\windows\x64\runner\Release\* -DestinationPath interval-timer-windows-$version.zip
+
+    - name: Upload Windows artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows-release
+        path: interval-timer-windows-*.zip
+        retention-days: 30
+
+    - name: Create GitHub Release
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: ${{ github.ref_name }}
+        name: Release ${{ github.ref_name }}
+        body: |
+          ## リリース内容
+          - Windows実行ファイル（64ビット版）
+
+          ## インストール方法
+          1. 下記のZIPファイルをダウンロード
+          2. 適当なフォルダに解凍
+          3. `interval_timer.exe` を実行
+
+          ## システム要件
+          - Windows 10以降（64ビット）
+
+          ## 注意事項
+          - 初回実行時にWindows Defenderの警告が表示される場合があります
+          - 「詳細情報」→「実行」で起動できます
+        files: |
+          interval-timer-windows-*.zip
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_
