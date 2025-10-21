@@ -164,7 +164,3 @@ key.properties
 # Exceptions to above rules
 !/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages
 !/dev/ci/**/Gemfile.lock
-
-# Workflow files (add via GitHub Web UI due to permissions)
-.github/workflows/windows-release.yml
-.github/workflows/linux-release.yml
